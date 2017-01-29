@@ -9,19 +9,25 @@ package rsa;
 import java.math.BigInteger;
 import java.util.*;
 import java.io.*;
+import java.security.SecureRandom;
 
 /**
  *
  * @author miguel
  */
+
 public class Rsa {
     
     //Variables
+    private final static SecureRandom random = new SecureRandom();
     private int num_bits;
     private BigInteger n,p,q;
     private BigInteger phi;
     private BigInteger e, d;
     
+    /**
+     * Constructores
+     */ 
     public Rsa(int num_bits)
     {
         this.num_bits=num_bits;
@@ -32,7 +38,6 @@ public class Rsa {
     public Rsa(int num_bits,BigInteger p, BigInteger q)
     {
         this.num_bits=num_bits;
-        //this.GeneratePrimos();
         this.p=p;
         this.q=q;
         this.GenerateKeys();
@@ -42,10 +47,10 @@ public class Rsa {
      * Gerenera a p y q
      */ 
     public void GeneratePrimos()
-    {
-        p = new BigInteger(this.num_bits, 10, new Random());
-        do{ 
-            q = new BigInteger(this.num_bits, 10, new Random());
+    {   
+        p = BigInteger.probablePrime(this.num_bits, random);
+        do{    
+            q =BigInteger.probablePrime(this.num_bits, random);
         }while(q.compareTo(p)==0);
     }
     
@@ -58,10 +63,10 @@ public class Rsa {
         // phi = (p-1)*(q-1)
         phi = p.subtract(BigInteger.valueOf(1));
         phi = phi.multiply(q.subtract(BigInteger.valueOf(1)));
-        do
-        { 
-            e = new BigInteger(2 * num_bits, new Random());
-        }while((e.compareTo(phi) != -1) || (e.gcd(phi).compareTo(BigInteger.valueOf(1)) != 0));
+        //e = new BigInteger("65537");//valor por defaul
+        do{ 
+            e = BigInteger.probablePrime(this.num_bits, random);
+        }while( !( (e.compareTo(phi) == -1) && (e.compareTo(BigInteger.valueOf(1)) == 1) || (e.gcd(phi).compareTo(BigInteger.valueOf(1)) == 0) ) );
         d = e.modInverse(phi);
     }
     
@@ -73,7 +78,6 @@ public class Rsa {
      */
     public BigInteger[] encripta(String mensaje)
     {
-
         byte[] temp = new byte[1];
         //Transforma el mensaje en una secuencia de bits
         byte[] digitos = mensaje.getBytes();
@@ -88,8 +92,6 @@ public class Rsa {
         for(int i=0; i<bigdigitos.length; i++)
             encriptado[i] = bigdigitos[i].modPow(e,n);
         
-        //String str = new String(digitos, "UTF-8");
-        
         return(encriptado);
     }
     
@@ -101,17 +103,17 @@ public class Rsa {
      */
     public String desencripta(BigInteger[] encriptado) 
     {
-        
         BigInteger[] desencriptado = new BigInteger[encriptado.length];
-        char[] charArray = new char[desencriptado.length];
+        char[] charArray = new char[desencriptado.length];   
         
-        for(int i=0; i<desencriptado.length; i++)
+        for(int i=0; i<desencriptado.length; i++){
             desencriptado[i] = encriptado[i].modPow(d,n);
+        }
         
-        
-        for(int i=0; i<charArray.length; i++)
+        for(int i=0; i<charArray.length; i++){
             charArray[i] = (char) (desencriptado[i].intValue());
-        
+        }
+            
         return(new String(charArray));
     }
     
